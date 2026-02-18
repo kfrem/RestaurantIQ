@@ -1,0 +1,103 @@
+Prompt: Restaurant Process Intelligence App
+
+Title:
+Restaurant Process Intelligence – Visual Cost & Profit Optimisation Platform
+
+Objective:
+Build an interactive mobile/web app that helps small and medium high-street restaurants visualise their entire business process — from raw material sourcing to post-sale customer retention — identifying where money flows, where costs accumulate, and where profits can be improved.
+
+Core Concept:
+The app is both a diagnostic and advisory dashboard. It tracks every operational stage of a restaurant’s value chain and uses data visualisation, “what-if” analysis, and recommendation algorithms to show how small adjustments (in sourcing, labour, logistics, pricing, or technology use) can improve net margins and cash flow.
+Key Features:
+
+    Process Flow Mapping
+
+        A dynamic flowchart showing every stage of the restaurant’s process:
+        Procurement → Storage → Preparation → Cooking → Service → Waste → After-sales follow-up.
+
+        Each node displays current cost, effort (labour hours), and output metrics.
+
+        Arrows show connections and flow of cost/value.
+
+    Cost and Profit Visualisation
+
+        Aggregated real-time metrics displayed in interactive charts:
+
+            Food cost percentage, labour cost %, energy cost %, and gross margin.
+
+            Visual breakdown via Tableau-style BI dashboards or React-based charts (Chart.js / D3.js).
+
+        Drill-down into each cost component to see where inefficiencies appear.
+
+    “What-If” Scenario Simulation
+
+        Adjustable sliders or input boxes to model hypotheticals:
+
+            “What if ingredient costs fell by 10%?”
+
+            “What if we reduced prep time using tech X?”
+
+            “What if online delivery increased by 15%?”
+
+        The app recalculates expected profits and visualises impacts instantly in colour-coded charts.
+
+    Smart Recommendations Engine
+
+        Suggests improvements based on data patterns:
+
+            Cheaper or more efficient suppliers nearby.
+
+            Substitution recommendations for ingredients.
+
+            Labour scheduling or automation tools to reduce costs.
+
+            Marketing or retention ideas to lift repeat sales.
+
+    Monthly Report Builder
+
+        Generates clean, client-ready reports combining charts, analytics, and commentary.
+
+        Reports display:
+
+            Key highlights of performance
+
+            Top 3 cost-saving recommendations
+
+            Monthly comparison visuals
+
+            Forecasted impact of implementing changes
+
+    User & SaaS Integration
+
+        In early phase: Used locally with single-restaurant data input.
+
+        Later phase: Multi-tenant SaaS model allowing subscription-based access, cloud sync (Supabase or Firebase), and report sharing.
+
+Technical Stack Suggestion:
+
+    Frontend: React + Next.js for responsive interface
+
+    Database: Supabase (PostgreSQL) for storing cost and process data
+
+    Visualisation: Chart.js or D3.js for custom React dashboards
+
+    Analytics: Python or Node.js backend with pandas, NumPy, scikit-learn for what-if modelling
+
+    Reports: Exportable to PDF or online dashboard views (e.g. via Plotly or Tableau Public integration)
+
+Tone and UX:
+
+Elegant, data-driven, and intuitive. The app should allow restaurant owners to “see their business working like a machine”, where each cog (supply, labour, sales) can be tuned for better efficiency. Include simple icons, colour-coded nodes (red for loss, green for profit), and hover-over tooltips with economic insights.
+Example Demonstration Flow:
+
+    User enters or uploads cost data (ingredients, labour, sales).
+
+    App generates a visual flowchain and BI dashboard.
+
+    User drags a slider — “reduce waste by 5%”.
+
+    Dashboard recalculates and shows +2% improvement in profit margin.
+
+    At meeting’s end, user exports the monthly advisory report with visuals.
+
+Would you like me to turn this prompt into a technical specification document (with data schema, UI layout sketches, and module breakdown) that you could hand to a developer or generate using an AI app builder?
