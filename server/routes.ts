@@ -9,6 +9,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { seedDatabase } from "./seed";
+import { requireAuth } from "./middleware/auth";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -19,6 +20,12 @@ export async function registerRoutes(
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // All routes below this point require a valid Supabase JWT
+  app.use("/api", (req, res, next) => {
+    if (req.path === "/health") return next();
+    return requireAuth(req, res, next);
   });
 
   app.get("/api/restaurants/current", async (_req, res) => {
