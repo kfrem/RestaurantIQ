@@ -1,9 +1,13 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, serial, boolean, unique } from "drizzle-orm/pg-core";
+import { pgSchema, text, integer, real, serial, boolean, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const restaurants = pgTable("restaurants", {
+// All RestaurantIQ tables live in the "restaurantiq" PostgreSQL schema.
+// This keeps them completely separate from any other app that shares the same
+// Supabase project (which typically uses the default "public" schema).
+const riq = pgSchema("restaurantiq");
+
+export const restaurants = riq.table("restaurants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(),
@@ -12,7 +16,7 @@ export const restaurants = pgTable("restaurants", {
   avgMonthlyCovers: integer("avg_monthly_covers").notNull(),
 });
 
-export const monthlyData = pgTable("monthly_data", {
+export const monthlyData = riq.table("monthly_data", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull(),
   month: text("month").notNull(),
@@ -36,7 +40,7 @@ export const monthlyData = pgTable("monthly_data", {
   uniqueMonthYear: unique().on(t.restaurantId, t.month, t.year),
 }));
 
-export const costCategories = pgTable("cost_categories", {
+export const costCategories = riq.table("cost_categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   key: text("key").notNull(),
@@ -49,7 +53,7 @@ export const costCategories = pgTable("cost_categories", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-export const restaurantCostItems = pgTable("restaurant_cost_items", {
+export const restaurantCostItems = riq.table("restaurant_cost_items", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull(),
   costCategoryId: integer("cost_category_id").notNull(),
@@ -58,7 +62,7 @@ export const restaurantCostItems = pgTable("restaurant_cost_items", {
   customPercentage: real("custom_percentage"),
 });
 
-export const suppliers = pgTable("suppliers", {
+export const suppliers = riq.table("suppliers", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull(),
   name: text("name").notNull(),
@@ -67,7 +71,7 @@ export const suppliers = pgTable("suppliers", {
   isActive: boolean("is_active").notNull().default(true),
 });
 
-export const ingredients = pgTable("ingredients", {
+export const ingredients = riq.table("ingredients", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull(),
   name: text("name").notNull(),
@@ -78,7 +82,7 @@ export const ingredients = pgTable("ingredients", {
   classification: text("classification").notNull().default("direct"),
 });
 
-export const supplierIngredients = pgTable("supplier_ingredients", {
+export const supplierIngredients = riq.table("supplier_ingredients", {
   id: serial("id").primaryKey(),
   supplierId: integer("supplier_id").notNull(),
   ingredientId: integer("ingredient_id").notNull(),
@@ -87,7 +91,7 @@ export const supplierIngredients = pgTable("supplier_ingredients", {
   leadTimeDays: integer("lead_time_days"),
 });
 
-export const menuItems = pgTable("menu_items", {
+export const menuItems = riq.table("menu_items", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull(),
   name: text("name").notNull(),
@@ -97,7 +101,7 @@ export const menuItems = pgTable("menu_items", {
   isActive: boolean("is_active").notNull().default(true),
 });
 
-export const menuItemIngredients = pgTable("menu_item_ingredients", {
+export const menuItemIngredients = riq.table("menu_item_ingredients", {
   id: serial("id").primaryKey(),
   menuItemId: integer("menu_item_id").notNull(),
   ingredientId: integer("ingredient_id").notNull(),
@@ -105,7 +109,7 @@ export const menuItemIngredients = pgTable("menu_item_ingredients", {
   unit: text("unit").notNull(),
 });
 
-export const promotions = pgTable("promotions", {
+export const promotions = riq.table("promotions", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull(),
   name: text("name").notNull(),
@@ -149,19 +153,7 @@ export type InsertMenuItemIngredient = z.infer<typeof insertMenuItemIngredientSc
 export type Promotion = typeof promotions.$inferSelect;
 export type InsertPromotion = z.infer<typeof insertPromotionSchema>;
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+// Note: user accounts are managed by Supabase Auth — no users table needed here.
 
 export const DEFAULT_COST_CATEGORIES: Omit<InsertCostCategory, "isDefault">[] = [
   { name: "Food & Ingredients", key: "foodCost", description: "Raw ingredients, beverages, and consumables", defaultPercentage: 30, icon: "ShoppingCart", processStage: "procurement", classification: "direct", sortOrder: 1 },

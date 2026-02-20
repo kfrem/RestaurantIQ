@@ -11,4 +11,6 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
+  // Only manage the "restaurantiq" schema — leaves all other apps' tables untouched
+  schemaFilter: ["restaurantiq"],
 });
