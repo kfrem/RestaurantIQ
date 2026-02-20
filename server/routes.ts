@@ -15,8 +15,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Run seed only once at startup, not blocking route registration
-  seedDatabase().catch((err) => console.error("Seed failed:", err));
+  // Await seed so cost categories are ready before first request
+  await seedDatabase().catch((err) => console.error("Seed failed:", err));
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
