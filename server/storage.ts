@@ -13,8 +13,7 @@ import {
   type MenuItem, type InsertMenuItem,
   type MenuItemIngredient, type InsertMenuItemIngredient,
   type Promotion, type InsertPromotion,
-  type User, type InsertUser,
-} from "@shared/schema";
+} from "../shared/schema";
 
 export interface IStorage {
   getRestaurant(id: number): Promise<Restaurant | undefined>;

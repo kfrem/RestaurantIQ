@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { DEFAULT_COST_CATEGORIES } from "@shared/schema";
+import { DEFAULT_COST_CATEGORIES } from "../shared/schema";
 import { log } from "./index";
 
 export async function seedDatabase() {

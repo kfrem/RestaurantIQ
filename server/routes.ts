@@ -6,7 +6,7 @@ import {
   insertRestaurantCostItemSchema, insertSupplierSchema, insertIngredientSchema,
   insertSupplierIngredientSchema, insertMenuItemSchema, insertMenuItemIngredientSchema,
   insertPromotionSchema,
-} from "@shared/schema";
+} from "../shared/schema";
 import { z } from "zod";
 import { seedDatabase } from "./seed";
 import { requireAuth } from "./middleware/auth";
