@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, timestamp, serial, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, timestamp, serial, boolean, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -32,7 +32,9 @@ export const monthlyData = pgTable("monthly_data", {
   totalCovers: integer("total_covers").notNull(),
   avgTicketSize: real("avg_ticket_size").notNull(),
   repeatCustomerRate: real("repeat_customer_rate").notNull(),
-});
+}, (t) => ({
+  uniqueMonthYear: unique().on(t.restaurantId, t.month, t.year),
+}));
 
 export const costCategories = pgTable("cost_categories", {
   id: serial("id").primaryKey(),

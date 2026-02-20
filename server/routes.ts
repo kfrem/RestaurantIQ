@@ -7,13 +7,19 @@ import {
   insertSupplierIngredientSchema, insertMenuItemSchema, insertMenuItemIngredientSchema,
   insertPromotionSchema,
 } from "@shared/schema";
+import { z } from "zod";
 import { seedDatabase } from "./seed";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  await seedDatabase();
+  // Run seed only once at startup, not blocking route registration
+  seedDatabase().catch((err) => console.error("Seed failed:", err));
+
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
 
   app.get("/api/restaurants/current", async (_req, res) => {
     try {
@@ -138,11 +144,19 @@ export async function registerRoutes(
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid ID" });
       }
-      const item = await storage.updateRestaurantCostItem(id, req.body);
+      const parsed = insertRestaurantCostItemSchema.partial().safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      }
+      const item = await storage.updateRestaurantCostItem(id, parsed.data);
       res.json(item);
     } catch (error) {
       res.status(500).json({ message: "Failed to update cost item" });
     }
+  });
+
+  const bulkCostItemSchema = z.object({
+    items: z.array(insertRestaurantCostItemSchema.partial()),
   });
 
   app.post("/api/restaurant-cost-items/bulk/:restaurantId", async (req, res) => {
@@ -151,12 +165,15 @@ export async function registerRoutes(
       if (isNaN(restaurantId)) {
         return res.status(400).json({ message: "Invalid restaurant ID" });
       }
+      const parsed = bulkCostItemSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      }
       await storage.deleteRestaurantCostItems(restaurantId);
-      const items = req.body.items as any[];
       const created = [];
-      for (const item of items) {
+      for (const item of parsed.data.items) {
         const result = await storage.createRestaurantCostItem({
-          ...item,
+          ...(item as any),
           restaurantId,
         });
         created.push(result);
@@ -194,7 +211,9 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const supplier = await storage.updateSupplier(id, req.body);
+      const parsed = insertSupplierSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const supplier = await storage.updateSupplier(id, parsed.data);
       res.json(supplier);
     } catch (error) {
       res.status(500).json({ message: "Failed to update supplier" });
@@ -239,7 +258,9 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const ingredient = await storage.updateIngredient(id, req.body);
+      const parsed = insertIngredientSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const ingredient = await storage.updateIngredient(id, parsed.data);
       res.json(ingredient);
     } catch (error) {
       res.status(500).json({ message: "Failed to update ingredient" });
@@ -329,7 +350,9 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const menuItem = await storage.updateMenuItem(id, req.body);
+      const parsed = insertMenuItemSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const menuItem = await storage.updateMenuItem(id, parsed.data);
       res.json(menuItem);
     } catch (error) {
       res.status(500).json({ message: "Failed to update menu item" });
@@ -359,14 +382,23 @@ export async function registerRoutes(
     }
   });
 
+  const bulkRecipeSchema = z.object({
+    ingredients: z.array(z.object({
+      ingredientId: z.number().int().positive(),
+      quantity: z.number().positive(),
+      unit: z.string().min(1),
+    })),
+  });
+
   app.post("/api/menu-item-ingredients/bulk/:menuItemId", async (req, res) => {
     try {
       const menuItemId = parseInt(req.params.menuItemId);
       if (isNaN(menuItemId)) return res.status(400).json({ message: "Invalid menu item ID" });
+      const parsed = bulkRecipeSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
       await storage.deleteMenuItemIngredients(menuItemId);
-      const items = req.body.ingredients as any[];
       const created = [];
-      for (const item of items) {
+      for (const item of parsed.data.ingredients) {
         const result = await storage.createMenuItemIngredient({
           menuItemId,
           ingredientId: item.ingredientId,
@@ -408,7 +440,9 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const promo = await storage.updatePromotion(id, req.body);
+      const parsed = insertPromotionSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
+      const promo = await storage.updatePromotion(id, parsed.data);
       res.json(promo);
     } catch (error) {
       res.status(500).json({ message: "Failed to update promotion" });
@@ -426,7 +460,7 @@ export async function registerRoutes(
     }
   });
 
-  // Data Import - CSV/Excel
+  // Data Import - CSV
   app.post("/api/import/ingredients", async (req, res) => {
     try {
       const { restaurantId, data } = req.body;

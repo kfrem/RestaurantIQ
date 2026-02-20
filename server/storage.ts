@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { db } from "./db";
 import {
   restaurants, monthlyData, costCategories, restaurantCostItems,
@@ -89,11 +89,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getMonthlyData(restaurantId: number): Promise<MonthlyData[]> {
-    return db.select().from(monthlyData).where(eq(monthlyData.restaurantId, restaurantId));
+    return db.select().from(monthlyData)
+      .where(eq(monthlyData.restaurantId, restaurantId))
+      .orderBy(asc(monthlyData.year), asc(monthlyData.month));
   }
 
   async getAllMonthlyData(): Promise<MonthlyData[]> {
-    return db.select().from(monthlyData);
+    return db.select().from(monthlyData)
+      .orderBy(asc(monthlyData.year), asc(monthlyData.month));
   }
 
   async createMonthlyData(data: InsertMonthlyData): Promise<MonthlyData> {

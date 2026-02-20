@@ -168,6 +168,22 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {!latestData && !isLoading && (
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <DollarSign className="h-12 w-12 mx-auto mb-3 text-muted-foreground/40" />
+            <h2 className="text-lg font-semibold mb-1">No data yet</h2>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+              Add your first month of financial data to start tracking performance, costs, and profit.
+            </p>
+            <a href="/add-data" className="inline-flex items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline">
+              <ArrowUpRight className="h-4 w-4" />
+              Add Monthly Data
+            </a>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Monthly Revenue"
@@ -270,7 +286,8 @@ export default function Dashboard() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">Weekly Profit Breakdown</CardTitle>
+          <CardTitle className="text-base font-semibold">Weekly Profit Estimate</CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">Estimated from monthly averages — actual weekly figures may vary</p>
         </CardHeader>
         <CardContent>
           {latestData && metrics ? (() => {

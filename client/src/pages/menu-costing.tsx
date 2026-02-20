@@ -9,18 +9,23 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, ChefHat, TrendingUp, Target, PoundSterling,
-  ArrowUpRight, ArrowDownRight, AlertTriangle, UtensilsCrossed,
+  ArrowUpRight, AlertTriangle, UtensilsCrossed,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 
 export default function MenuCosting() {
   const { toast } = useToast();
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [targetMonthlyProfit, setTargetMonthlyProfit] = useState(15000);
   const [newItem, setNewItem] = useState({ name: "", category: "main", sellingPrice: "", description: "" });
@@ -52,6 +57,9 @@ export default function MenuCosting() {
       setNewItem({ name: "", category: "main", sellingPrice: "", description: "" });
       toast({ title: "Menu item created" });
     },
+    onError: () => {
+      toast({ title: "Failed to create menu item", variant: "destructive" });
+    },
   });
 
   const deleteMenuItemMutation = useMutation({
@@ -60,6 +68,9 @@ export default function MenuCosting() {
       queryClient.invalidateQueries({ queryKey: ["/api/menu-items", restaurantId] });
       setSelectedItem(null);
       toast({ title: "Menu item deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete menu item", variant: "destructive" });
     },
   });
 
@@ -70,14 +81,10 @@ export default function MenuCosting() {
       queryClient.invalidateQueries({ queryKey: ["/api/menu-item-ingredients", selectedItem] });
       toast({ title: "Recipe saved" });
     },
+    onError: () => {
+      toast({ title: "Failed to save recipe", variant: "destructive" });
+    },
   });
-
-  const menuAnalysis = useMemo(() => {
-    return menuItems.map((item) => {
-      const cost = 0;
-      return { ...item, costPerServe: cost, profitPerServe: item.sellingPrice - cost, margin: cost > 0 ? ((item.sellingPrice - cost) / item.sellingPrice) * 100 : 100 };
-    });
-  }, [menuItems]);
 
   const getRecipeCost = (ingredients: MenuItemIngredient[]) => {
     let total = 0;
@@ -231,9 +238,7 @@ export default function MenuCosting() {
                       size="icon"
                       variant="ghost"
                       data-testid="button-delete-menu-item"
-                      onClick={() => {
-                        if (confirm("Delete this menu item?")) deleteMenuItemMutation.mutate(selectedMenuItem.id);
-                      }}
+                      onClick={() => setItemToDelete(selectedMenuItem.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -479,6 +484,31 @@ export default function MenuCosting() {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={itemToDelete !== null} onOpenChange={(open) => { if (!open) setItemToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Menu Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this menu item? Its recipe ingredients will also be removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (itemToDelete !== null) {
+                  deleteMenuItemMutation.mutate(itemToDelete);
+                  setItemToDelete(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

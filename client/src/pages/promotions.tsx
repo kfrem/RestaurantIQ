@@ -10,18 +10,23 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, Percent, Target, TrendingDown, TrendingUp,
   Calculator, Tag, AlertTriangle,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
 export default function Promotions() {
   const { toast } = useToast();
   const [showAddPromo, setShowAddPromo] = useState(false);
+  const [promoToDelete, setPromoToDelete] = useState<number | null>(null);
   const [newPromo, setNewPromo] = useState({ name: "", discountPercent: 10, menuItemId: "", targetProfit: "" });
   const [simDiscount, setSimDiscount] = useState(10);
   const [simMenuItem, setSimMenuItem] = useState<number | null>(null);
@@ -39,6 +44,19 @@ export default function Promotions() {
   const { data: allIngredients = [] } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients", restaurantId],
   });
+  const { data: simRecipeIngredients = [] } = useQuery<MenuItemIngredient[]>({
+    queryKey: ["/api/menu-item-ingredients", simMenuItem],
+    enabled: !!simMenuItem,
+  });
+
+  const getIngredientCost = (recipeIngredients: MenuItemIngredient[]) => {
+    let total = 0;
+    for (const ri of recipeIngredients) {
+      const ing = allIngredients.find((i) => i.id === ri.ingredientId);
+      if (ing) total += ri.quantity * ing.currentPrice;
+    }
+    return total;
+  };
 
   const createPromoMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/promotions", data),
@@ -48,6 +66,9 @@ export default function Promotions() {
       setNewPromo({ name: "", discountPercent: 10, menuItemId: "", targetProfit: "" });
       toast({ title: "Promotion created" });
     },
+    onError: () => {
+      toast({ title: "Failed to create promotion", variant: "destructive" });
+    },
   });
 
   const deletePromoMutation = useMutation({
@@ -55,6 +76,9 @@ export default function Promotions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/promotions", restaurantId] });
       toast({ title: "Promotion deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete promotion", variant: "destructive" });
     },
   });
 
@@ -86,7 +110,7 @@ export default function Promotions() {
       };
     }
 
-    const ingredientCost = item.sellingPrice * 0.30;
+    const ingredientCost = getIngredientCost(simRecipeIngredients);
     const discountedPrice = item.sellingPrice * (1 - simDiscount / 100);
     const profitPerServe = discountedPrice - ingredientCost;
     const originalProfit = item.sellingPrice - ingredientCost;
@@ -104,10 +128,10 @@ export default function Promotions() {
       servesNeeded,
       originalServesNeeded,
       extraServes,
-      marginOriginal: (originalProfit / item.sellingPrice) * 100,
+      marginOriginal: item.sellingPrice > 0 ? (originalProfit / item.sellingPrice) * 100 : 0,
       marginDiscounted: profitPerServe > 0 ? (profitPerServe / discountedPrice) * 100 : 0,
     };
-  }, [simMenuItem, simDiscount, simTargetProfit, menuItems]);
+  }, [simMenuItem, simDiscount, simTargetProfit, menuItems, simRecipeIngredients, allIngredients]);
 
   const discountScenarios = useMemo(() => {
     const scenarios = [5, 10, 15, 20, 25, 30];
@@ -207,7 +231,7 @@ export default function Promotions() {
                       <span className="text-xs text-muted-foreground">Target: £{promo.targetProfit.toLocaleString()}/month</span>
                     )}
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete this promotion?")) deletePromoMutation.mutate(promo.id); }}>
+                  <Button size="icon" variant="ghost" onClick={() => setPromoToDelete(promo.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -271,6 +295,12 @@ export default function Promotions() {
             </div>
           </div>
 
+          {simMenuItem && simRecipeIngredients.length === 0 && (
+            <div className="p-3 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm">
+              No recipe defined for this item. Add ingredients in Menu Costing to get accurate cost data.
+            </div>
+          )}
+
           {simAnalysis.profitPerServe > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3 rounded-md bg-muted/50 text-center">
@@ -331,6 +361,31 @@ export default function Promotions() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={promoToDelete !== null} onOpenChange={(open) => { if (!open) setPromoToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Promotion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this promotion? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (promoToDelete !== null) {
+                  deletePromoMutation.mutate(promoToDelete);
+                  setPromoToDelete(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
