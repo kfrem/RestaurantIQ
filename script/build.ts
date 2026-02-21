@@ -44,6 +44,22 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  // Pre-bundle the Vercel serverless API handler so Vercel runs the
+  // compiled JS directly instead of trying to resolve TS imports at runtime.
+  console.log("building api handler...");
+  await esbuild({
+    entryPoints: ["api/index.ts"],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outfile: "api/index.js",
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+    external: externals,
+    logLevel: "info",
+  });
 }
 
 buildAll().catch((err) => {

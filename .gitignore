@@ -3,6 +3,7 @@ node_modules/
 
 # Build outputs
 dist/
+api/index.js
 
 # Environment — never commit secrets
 .env
